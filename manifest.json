@@ -5,8 +5,20 @@
 	"description": "none",
 	"content_scripts": [
 		{
-			"matches": [],
-			"js": "content.js"
+			"matches": ["https://www.youtube.com/watch*"],
+			"js": ["content.js"]
 		}
+	],
+	"background": {
+		"scripts": ["background.js"]
+	},
+	"permissions": [
+		"webRequest",
+		"webRequestBlocking",
+		"webRequestFilterResponse",
+		"tabs",
+		"<all_urls>",
+		"activeTab",
+		"contextMenus"
 	]
 }
