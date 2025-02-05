@@ -59,10 +59,65 @@ function chatReplayListener(details)
 	browser.webRequest.onHeadersReceived.removeListener(chatReplayListener);
 }
 
-function dataProcesser(data)
+async function dataProcesser(data)
 {
+	const splitSec = 30;
+	const regex = /(?<="timestampText":{"simpleText":")\d{1,8}:\d{1,8}(?="})/g
+	let match = "";
+
+	let subSec = splitSec;
+	let commentCount = [];
+	let comments = 0;
+
+	while((match = regex.exec(data)) !== null)
+	{
+		console.log("last index: ", regex.lastIndex);
+		console.log("match index: ", match.index)
+		if ((time2Seconds(match[0]) - subSec) < 0)
+		{
+			comments += 1;
+		}
+		else
+		{
+			regex.lastIndex = match.index;
+			commentCount.push(comments);
+			subSec += splitSec;
+			comments = 0;
+		}
+	}
+	commentCount.push(comments);
+
+	console.log(commentCount);
+
+/*
 	let matchArray = [];
-	let regex = /(?<="timestampText":{"simpleText":")\d{1,8}:\d{1,8}(?="})/g
 	matchArray = data.match(regex);
 	console.log(matchArray);
+	matchArray.forEach((element) => {
+		console.log(time2Seconds(element));
+	});
+/* */
+}
+
+function time2Seconds(textTime)
+{
+	let parts = textTime.split(":").map(Number);
+
+	if (parts.length === 1)
+	{
+		return parts[0];
+	}
+	else if (parts.length === 2)
+	{
+		return parts[0] * 60 + parts[1];
+	}
+	else if (parts.length === 3)
+	{
+		return parts[0] * 3600 + parts[1] * 60 + parts[2];
+	}
+	return NaN;
+}
+
+function drawOnBar()
+{
 }
