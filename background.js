@@ -71,6 +71,8 @@ async function additionalChatListener(details)
 		await chatProcesser.setContinuation(continuationString);
 		await setExample(details);
 		chatProcesser.testRequest();
+
+		chatProcesser.commentsTime(data);
 	};
 }
 
