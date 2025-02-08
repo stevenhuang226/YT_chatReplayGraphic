@@ -10,7 +10,8 @@
 		}
 	],
 	"background": {
-		"scripts": ["background.js"]
+		"scripts": ["background.js", "chatReplay.js"],
+		"persistent": true
 	},
 	"permissions": [
 		"webRequest",
@@ -18,7 +19,6 @@
 		"webRequestFilterResponse",
 		"tabs",
 		"<all_urls>",
-		"activeTab",
 		"contextMenus"
 	]
 }

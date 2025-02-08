@@ -1,10 +1,25 @@
 let listenerAdded = false;
 let handlingTabId;
+
+let continuations = [];
+
+let decoder = new TextDecoder("utf-8");
+let encoder = new TextEncoder();
+
+let chatProcesser;
+
+/* test variable */
+let compareArray = [];
+/* end test variable */
+
 browser.runtime.onMessage.addListener((message, sender) =>
 	{
 		if (message.action === "startListenLiveChatReplay")
 		{
 			addChatReplayListener(sender.tab.id);
+		}
+		if (message.action === "stopAll")
+		{
 		}
 	}
 );
@@ -16,31 +31,61 @@ function addChatReplayListener(tabId)
 	{
 		return;
 	}
-	browser.webRequest.onHeadersReceived.addListener(
+	listenerAdded = true;
+	browser.webRequest.onBeforeRequest.addListener(
 		chatReplayListener,
 		{"urls": ["https://www.youtube.com/live_chat_replay?continuation=*"]},
 		["blocking"]
 	);
+	browser.webRequest.onBeforeRequest.addListener(
+		additionalChatListener,
+		{"urls": ["https://www.youtube.com/youtubei/v1/live_chat/get_live_chat_replay?prettyPrint=false"]},
+		["blocking", "requestBody"]
+	);
+	chatProcesser = new chatReplayProcesser(tabId);
+}
+
+async function additionalChatListener(details)
+{
+	if (details.tabId !== handlingTabId || details.method !== "POST")
+	{
+		return;
+	}
+
+	let filter = browser.webRequest.filterResponseData(details.requestId);
+
+	let chunk = "";
+	let data = "";
+
+	filter.ondata = (event) =>
+	{
+		chunk = decoder.decode(event.data, {stream: true});
+		data += chunk;
+		filter.write(event.data);
+	};
+	filter.onstop = async (event) =>
+	{
+		filter.disconnect();
+		let continuationString = await getContinuation(data);
+		console.log("add continuation: ", continuationString);
+		await chatProcesser.setContinuation(continuationString);
+		await setExample(details);
+		chatProcesser.testRequest();
+	};
 }
 
 function chatReplayListener(details)
 {
 	/*
-	if (details.tabId != handlingTabId) 
+	if (details.tabId !== handlingTabId)
 	{
 		return;
 	}
-	/* */
-
-	console.log(details);
-
+	*/
 	let filter = browser.webRequest.filterResponseData(details.requestId);
-	let decoder = new TextDecoder("utf-8");
-	let encoder = new TextEncoder();
 
 	let chunk = "";
 	let data = "";
-
 
 	filter.ondata = (event) =>
 	{
@@ -52,17 +97,16 @@ function chatReplayListener(details)
 	{
 		filter.disconnect();
 		dataProcesser(data);
+		/*
+		browser.webRequest.onBeforeRequest.removeListener(chatReplayListener);
+		*/
 	};
-
-	listenerAdded = false;
-	handlingTabId = -1;
-	browser.webRequest.onHeadersReceived.removeListener(chatReplayListener);
 }
 
 async function dataProcesser(data)
 {
 	const splitSec = 30;
-	const regex = /(?<="timestampText":{"simpleText":")\d{1,8}:\d{1,8}(?="})/g
+	const regex = /(?<="timestampText":{"simpleText":")\d{0,4}:*\d{0,8}:*\d{1,8}(?="})/g
 	let match = "";
 
 	let subSec = splitSec;
@@ -71,8 +115,6 @@ async function dataProcesser(data)
 
 	while((match = regex.exec(data)) !== null)
 	{
-		console.log("last index: ", regex.lastIndex);
-		console.log("match index: ", match.index)
 		if ((time2Seconds(match[0]) - subSec) < 0)
 		{
 			comments += 1;
@@ -89,14 +131,15 @@ async function dataProcesser(data)
 
 	console.log(commentCount);
 
-/*
-	let matchArray = [];
-	matchArray = data.match(regex);
-	console.log(matchArray);
-	matchArray.forEach((element) => {
-		console.log(time2Seconds(element));
-	});
-/* */
+	console.log("first continuation: ", getContinuation(data));
+	continuations.push(getContinuation(data));
+}
+function getContinuation(data)
+{
+	const regex = /(?<=,"continuation":").*?(?=")/g
+	let match = [];
+	match = data.match(regex);
+	return match[0] || null;
 }
 
 function time2Seconds(textTime)
@@ -118,6 +161,66 @@ function time2Seconds(textTime)
 	return NaN;
 }
 
-function drawOnBar()
+/* test function */
+function compareContinuation(details)
 {
+	let requestBody = JSON.parse(decoder.decode((details.requestBody.raw[0]).bytes));
+	let stat = "";
+	if (requestBody.continuation == continuations[continuations.length - 1])
+	{
+		stat = "same as last one";
+	}
+	else
+	{
+		stat = "not same as last one";
+	}
+	console.log(continuations[continuations.length - 1], requestBody.continuation, stat)
 }
+
+async function compare(details)
+{
+	let requestBody = JSON.parse(decoder.decode((details.requestBody.raw[0]).bytes));
+	if (compareArray.length === 0)
+	{
+		compareArray.push(requestBody);
+		return;
+	}
+	let lastRequestBody = compareArray[compareArray.length - 1];
+	await compareObject(requestBody, lastRequestBody);
+	compareArray.push(requestBody);
+}
+
+function setExample(details)
+{
+	let requestBody = JSON.parse(decoder.decode((details.requestBody.raw[0]).bytes));
+	chatProcesser.setRequestBodyExample(requestBody);
+}
+
+async function compareObject(obj1, obj2, path = "")
+{
+	if (Object.keys(obj1) < Object.keys(obj2))
+	{
+		[obj1, obj2] = [obj2, obj1];
+	}
+	for (let key in obj1)
+	{
+		let fullPath = `${path}.${key}` || key;
+		if (! (key in obj2))
+		{
+			console.log(`${fullPath} not found`);
+			continue;
+		}
+		if (typeof obj1[key] === "object" && typeof obj2[key] === "object")
+		{
+			await compareObject(obj1[key], obj2[key], `${fullPath}.${key}`);
+			continue;
+		}
+		if (obj1[key] !== obj2[key])
+		{
+			console.log(`${fullPath} different\n${obj1[key]}\n${obj2[key]}`);
+			continue;
+		}
+	}
+}
+
+/* end test function */
