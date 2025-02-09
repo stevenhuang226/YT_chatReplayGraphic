@@ -1,17 +1,28 @@
 class chatReplayProcesser
 {
+	playerOffsetSub = 5000;
+	splitSec = 30;
+
+	isActive = false;
+	tabId = -1;
+	nextContinuation = "";
+	playerOffset = 0;
+	requestBodyExample;
+	commentCount = {};
+
+	counterSubTimes = 1;
+
+	decoder = new TextDecoder("utf-8");
+
 	constructor(tabId)
 	{
 		this.isActive = true;
 		this.tabId = tabId;
-		this.continuation = "";
-		this.playerOffset = 0;
-		this.requestBodyExample;
 	}
 
 	setContinuation(str)
 	{
-		this.continuation = str;
+		this.nextContinuation = str;
 	}
 	setPlayerOffset(playerOffset)
 	{
@@ -22,24 +33,79 @@ class chatReplayProcesser
 		this.requestBodyExample = structuredClone(obj);
 		delete this.requestBodyExample.context.clickTracking;
 	}
+	setExampleByDetails(details)
+	{
+		this.setRequestBodyExample(JSON.parse(this.decoder.decode((details.requestBody.raw[0]).bytes)))
+	}
+	getCommentCount()
+	{
+		return this.commentCount;
+	}
 
 	commentsTime(data)
 	{
 		let ytChatAction = JSON.parse(data);
-		if (ytChatAction.continuationContents.liveChatContinuation.actions === undefined)
+		let comments = [];
+		let actions = ytChatAction?.continuationContents?.liveChatContinuation?.actions;
+		if (! actions)
 		{
 			return [];
 		}
-
-		let commentCount = [];
-		let actions = ytChatAction.continuationContents.liveChatContinuation.actions;
 		actions.forEach((element, index) => {
-			if (! element.replayChatItemAction?.videoOffsetTimeMsec)
+			let commentMsec = element.replayChatItemAction?.videoOffsetTimeMsec;
+			if (! commentMsec)
 			{
 				return;
 			}
-			console.log(element.replayChatItemAction?.videoOffsetTimeMsec);
-		})
+			commentMsec = parseInt(commentMsec);
+			comments.push(commentMsec);
+			if (index === actions.length - 1)
+			{
+				this.playerOffset = commentMsec - this.playerOffsetSub;
+			}
+		});
+
+		return comments;
+	}
+
+	commentsCounter(commentsMSec)
+	{
+		const splitMSec = this.splitSec * 1000;
+		let comments = 0;
+		for (let index = 0; index < commentsMSec.length; ++index)
+		{
+			if ((commentsMSec[index] - splitMSec * this.counterSubTimes) < 0)
+			{
+				++comments;
+			}
+			else
+			{
+				this.addCounterNum(comments);
+				--index;
+				++this.counterSubTimes;
+				comments = 0;
+			}
+		}
+		this.addCounterNum(comments);
+		--this.counterSubTimes;
+	}
+
+	startLoopRequest()
+	{
+
+	}
+
+	addCounterNum(num)
+	{
+		let secGroup = this.commentCount[this.splitSec * this.counterSubTimes];
+		if (! secGroup)
+		{
+			this.commentCount[this.splitSec * this.counterSubTimes] = num;
+		}
+		else
+		{
+			this.commentCount[this.splitSec * this.counterSubTimes] = secGroup + num;
+		}
 	}
 
 	cleanup()
@@ -52,7 +118,7 @@ class chatReplayProcesser
 	testRequest()
 	{
 		let requestBody = structuredClone(this.requestBodyExample);
-		requestBody.continuation = this.continuation;
+		requestBody.continuation = this.nextContinuation;
 		console.log("fake request body: \n", requestBody);
 	}
 	/* end test */
@@ -66,7 +132,7 @@ function requestNewChatReplay(that)
 	}
 
 	let requestBody = structuredClone(that.requestBodyExample);
-	requestBody.continuation = that.continuation;
+	requestBody.continuation = that.nextContinuation;
 	requestBody.currentPlayerState.playerOffsetMs = that.playerOffset // set the current player off set
 
 
@@ -80,9 +146,19 @@ function requestNewChatReplay(that)
 	)
 
 	fetch(request)
+		.then(response => {
+		})
 
 	// check include continuation
-	// check the last comment time
+	// check the last comment time (trought data into commentsTime)
+}
+
+function getContinuation(data)
+{
+	const regex = /(?<=,"continuation":").*?(?=")/g
+	let match = [];
+	match = data.match(regex);
+	return match[0] || null;
 }
 
 /* I have no idea why it herer
