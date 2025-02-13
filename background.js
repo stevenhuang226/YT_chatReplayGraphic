@@ -70,18 +70,14 @@ async function additionalChatListener(details)
 	filter.onstop = async (event) =>
 	{
 		filter.disconnect();
-		let continuationString = await getContinuation(data);
-		chatProcesser.setContinuation(continuationString);
 		chatProcesser.setExampleByDetails(details);
+		chatProcesser.setNextContinuationByData(data);
 		let comments = chatProcesser.commentsTime(data);
 		chatProcesser.commentsCounter(comments);
 
 		/* test */
-		console.log("add continuation: ", continuationString);
-//		await setExample(details);
 		chatProcesser.testRequest(); 
 
-//		chatProcesser.commentsTime(data);
 		console.log(comments);
 		console.log(chatProcesser.getCommentCount());
 		/* end test */

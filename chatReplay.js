@@ -90,6 +90,21 @@ class chatReplayProcesser
 		--this.counterSubTimes;
 	}
 
+	setNextContinuationByData(data)
+	{
+		let responseObj = JSON.parse(data);
+		let continuation = responseObj?.continuationContents?.liveChatContinuation?.continuations[0]?.liveChatReplayContinuationData?.continuation;
+
+		if (continuation)
+		{
+			this.nextContinuation = continuation;
+		}
+		else
+		{
+			this.nextContinuation = null;
+		}
+	}
+
 	startLoopRequest()
 	{
 
@@ -117,9 +132,7 @@ class chatReplayProcesser
 	/* test */
 	testRequest()
 	{
-		let requestBody = structuredClone(this.requestBodyExample);
-		requestBody.continuation = this.nextContinuation;
-		console.log("fake request body: \n", requestBody);
+		requestNewChatReplay(this);
 	}
 	/* end test */
 }
@@ -133,22 +146,12 @@ function requestNewChatReplay(that)
 
 	let requestBody = structuredClone(that.requestBodyExample);
 	requestBody.continuation = that.nextContinuation;
-	requestBody.currentPlayerState.playerOffsetMs = that.playerOffset // set the current player off set
+	requestBody.currentPlayerState.playerOffsetMs = String(that.playerOffset);
 
-
-	const request = new Request(
-		"",
-		{
-			method: "POST",
-			headers: {},
-			body: JSON.stringify(requestBody)
-		}
-	)
-
-	fetch(request)
-		.then(response => {
-		})
-
+	browser.tabs.sendMessage(that.tabId, {
+		"action": "chatReplayRequest",
+		"requestBody": JSON.stringify(requestBody)
+	})
 	// check include continuation
 	// check the last comment time (trought data into commentsTime)
 }
