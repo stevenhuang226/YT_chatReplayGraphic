@@ -22,8 +22,12 @@ browser.runtime.onMessage.addListener((message, sender) =>
 		}
 		if (message.action === "stopAll")
 		{
+			try{
 			browser.webRequest.onBeforeRequest.removeListener(chatReplayListener);
 			browser.webRequest.onBeforeRequest.removeListener(additionalChatListener);
+			browser.webRequest.onBeforeSendHeaders.removeListener(additionalChatReplayHeaderListener);
+			}
+			catch (error) {console.log(error)};
 			chatProcesser.cleanup();
 		}
 	}
@@ -41,12 +45,17 @@ function addChatReplayListener(tabId)
 		chatReplayListener,
 		{"urls": ["https://www.youtube.com/live_chat_replay?continuation=*"]},
 		["blocking"]
-	);
+	)
 	browser.webRequest.onBeforeRequest.addListener(
 		additionalChatListener,
 		{"urls": ["https://www.youtube.com/youtubei/v1/live_chat/get_live_chat_replay?prettyPrint=false"]},
 		["blocking", "requestBody"]
-	);
+	)
+	browser.webRequest.onBeforeSendHeaders.addListener(
+		additionalChatReplayHeaderListener,
+		{"urls": ["https://www.youtube.com/youtubei/v1/live_chat/get_live_chat_replay?prettyPrint=false"]},
+		["blocking", "requestHeaders"]
+	)
 }
 
 async function additionalChatListener(details)
@@ -70,18 +79,40 @@ async function additionalChatListener(details)
 	filter.onstop = async (event) =>
 	{
 		filter.disconnect();
-		chatProcesser.setExampleByDetails(details);
-		chatProcesser.setNextContinuationByData(data);
-		let comments = chatProcesser.commentsTime(data);
-		chatProcesser.commentsCounter(comments);
+		console.log("start setting");
+		await chatProcesser.setExampleByDetails(details);
+		await chatProcesser.setNextContinuationByData(data);
+		let comments = await chatProcesser.commentsTime(data);
 
-		/* test */
-		chatProcesser.testRequest(); 
-
-		console.log(comments);
-		console.log(chatProcesser.getCommentCount());
-		/* end test */
+		browser.tabs.sendMessage(handlingTabId, {
+			action: "setContinuation",
+			continuation: await chatProcesser.getNextContinuatoin()
+		});
+		browser.tabs.sendMessage(handlingTabId, {
+			action: "setRequestBodyExample",
+			requestBodyExample: JSON.stringify(await chatProcesser.getRequestBodyExample())
+		});
+		browser.tabs.sendMessage(handlingTabId, {
+			action: "addComments",
+			commentsArray: JSON.stringify(comments)
+		});
+		//browser.webRequest.onBeforeRequest.removeListener(additionalChatListener);
 	};
+}
+
+async function additionalChatReplayHeaderListener(details)
+{
+	if (details.tabId !== handlingTabId || details.method !== "POST")
+	{
+		return;
+	}
+	chatProcesser.setExampleHeadersByDetails(details);
+	console.log(chatProcesser.getHeadersExample());
+	browser.tabs.sendMessage(handlingTabId, {
+		action: "setRequestHeadersExample",
+		requestHeadersExample: JSON.stringify(chatProcesser.getHeadersExample())
+	});
+	browser.webRequest.onBeforeSendHeaders.removeListener(additionalChatReplayHeaderListener);
 }
 
 function chatReplayListener(details)
@@ -108,27 +139,8 @@ function chatReplayListener(details)
 		filter.disconnect();
 		//let commentCount = chatProcesser.commentsTime(data); // bug!! TODO new function for the first non json response
 		//console.log(commentCount); // debug
-		// browser.webRequest.onBeforeRequest.removeListener(chatReplayListener);
+		browser.webRequest.onBeforeRequest.removeListener(chatReplayListener);
 	};
-}
-
-function time2Seconds(textTime)
-{
-	let parts = textTime.split(":").map(Number);
-
-	if (parts.length === 1)
-	{
-		return parts[0];
-	}
-	else if (parts.length === 2)
-	{
-		return parts[0] * 60 + parts[1];
-	}
-	else if (parts.length === 3)
-	{
-		return parts[0] * 3600 + parts[1] * 60 + parts[2];
-	}
-	return NaN;
 }
 
 /* test function */
@@ -224,4 +236,23 @@ async function dataProcesser(data)
 	console.log("first continuation: ", getContinuation(data));
 	continuations.push(getContinuation(data));
 }
+function time2Seconds(textTime)
+{
+	let parts = textTime.split(":").map(Number);
+
+	if (parts.length === 1)
+	{
+		return parts[0];
+	}
+	else if (parts.length === 2)
+	{
+		return parts[0] * 60 + parts[1];
+	}
+	else if (parts.length === 3)
+	{
+		return parts[0] * 3600 + parts[1] * 60 + parts[2];
+	}
+	return NaN;
+}
+
 /* end test function */

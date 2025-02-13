@@ -8,7 +8,7 @@ class chatReplayProcesser
 	nextContinuation = "";
 	playerOffset = 0;
 	requestBodyExample;
-	requestHeadersExample = {};
+	requestHeadersExample;
 	commentCount = {};
 
 	counterSubTimes = 1;
@@ -34,51 +34,19 @@ class chatReplayProcesser
 		this.requestBodyExample = structuredClone(obj);
 		delete this.requestBodyExample.context.clickTracking;
 	}
-	setRequestHeadersExample(obj)
-	{
-		this.requestHeadersExample = structuredClone(obj);
-	}
-	getRequestBodyExample()
-	{
-		return this.requestBodyExample;
-	}
-	getHeadersExample()
-	{
-		return this.requestHeadersExample;
-	}
-	getNextContinuatoin()
-	{
-		return this.nextContinuation;
-	}
 	async setExampleByDetails(details)
 	{
 		await this.setRequestBodyExample(JSON.parse(this.decoder.decode((details.requestBody.raw[0]).bytes)));
+		return this.requestBodyExample;
 	}
-	async setExampleHeadersByDetails(details)
+	setExampleHeadersByDetails(details)
 	{
-		const headers = details?.requestHeaders;
-		if (! headers)
-		{
-			return null;
-		}
-		headers.forEach((element) => {
-			if (element.name === "X-Goog-Visitor-Id")
-			{
-				this.requestHeadersExample["X-Goog-Visitor-Id"] = element.value;
-			}
-			else if (element.name === "X-Youtube-Bootstrap-Logged-In")
-			{
-				this.requestHeadersExample["X-Youtube-Bootstrap-Logged-In"] = element.value;
-			}
-			else if (element.name === "X-Youtube-Client-Name")
-			{
-				this.requestHeadersExample["X-Youtube-Client-Name"] = element.value;
-			}
-			else if (element.name === "X-Youtube-Client-Version")
-			{
-				this.requestHeadersExample["X-Youtube-Client-Version"] = element.value;
-			}
-		});
+		this.requestHeadersExample["X-Goog-Visitor-Id"] = details.requestHeaders?.["X-Goog-Visitor-Id"];
+		this.requestHeadersExample["X-Youtube-Bootstrap-Logged-In"] = details.requestHeaders?.["X-Youtube-Bootstrap-Logged-In"];
+		this.requestHeadersExample["X-Youtube-Client-Name"] = details.requestHeaders?.["X-Youtube-Client-Name"];
+		this.requestHeadersExample["X-Youtube-Client-Version"] = details.requestHeaders?.["X-Youtube-Client-Version"];
+
+		return this.requestHeadersExample;
 	}
 	getCommentCount()
 	{
@@ -141,10 +109,12 @@ class chatReplayProcesser
 		if (continuation)
 		{
 			this.nextContinuation = continuation;
+			return continuation;
 		}
 		else
 		{
 			this.nextContinuation = null;
+			return null;
 		}
 	}
 
