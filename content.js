@@ -34,6 +34,10 @@ browser.runtime.onMessage.addListener((message, sender) => {
 		let requestHeaders = JSON.parse(message.requestHeadersExample);
 		chatProcesser.setRequestHeadersExample(requestHeaders);
 	}
+	else if (message.action == "addComments")
+	{
+		chatProcesser.commentsCounter(JSON.parse(message.comments));
+	}
 })
 
 /* test */
@@ -41,6 +45,8 @@ function testRequest()
 {
 	console.log("start test request");
 	chatProcesser.testRequest();
+
+	browser.runtime.sendMessage({action: "stopAll"});
 }
 
 function newChatReplayRequest(requestHeaders, requestBody)

@@ -8,10 +8,6 @@ let encoder = new TextEncoder();
 
 let chatProcesser;
 
-/* test variable */
-let compareArray = [];
-/* end test variable */
-
 browser.runtime.onMessage.addListener((message, sender) =>
 	{
 		console.log(message); // debug
@@ -93,7 +89,6 @@ async function additionalChatListener(details)
 			action: "addComments",
 			commentsArray: JSON.stringify(comments)
 		});
-		browser.webRequest.onBeforeRequest.removeListener(additionalChatListener);
 	};
 }
 
@@ -132,7 +127,11 @@ function chatReplayListener(details)
 	filter.onstop = (event) =>
 	{
 		filter.disconnect();
-		//let commentCount = chatProcesser.commentsTime(data); // bug!! TODO new function for the first non json response
+		let commentsMsec = InitRequestCommentsTime(data);
+		browser.tabs.sendMessage(handlingTabId, {
+			action: "addComments",
+			comments: JSON.stringify(commentsMsec)
+		})
 		//console.log(commentCount); // debug
 		browser.webRequest.onBeforeRequest.removeListener(chatReplayListener);
 	};
@@ -188,4 +187,16 @@ function getNextContinuationByData(data)
 	{
 		return null;
 	}
+}
+
+function InitRequestCommentsTime(data)
+{
+	const regex = /(?<="timestampText":{"simpleText":")\d{0,4}:*\d{0,8}:*\d{1,8}(?="})/g;
+	let matches = data.match(regex);
+	for (let i = 0; i < matches.length; ++i)
+	{
+		matches[i] *= 1000;
+	}
+
+	return matches;
 }

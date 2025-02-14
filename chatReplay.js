@@ -27,7 +27,7 @@ class chatReplayProcesser
 	}
 	setPlayerOffset(playerOffset)
 	{
-		this.playerOffset = playerOffset;
+		this.playerOffset = String(playerOffset);
 	}
 	setRequestBodyExample(obj)
 	{
@@ -37,6 +37,20 @@ class chatReplayProcesser
 	setRequestHeadersExample(obj)
 	{
 		this.requestHeadersExample = structuredClone(obj);
+	}
+	setNextContinuationByData(data)
+	{
+		let responseObj = JSON.parse(data);
+		let continuation = responseObj?.continuationContents?.liveChatContinuation?.continuations[0]?.liveChatReplayContinuationData?.continuation;
+
+		if (continuation)
+		{
+			this.nextContinuation = continuation;
+		}
+		else
+		{
+			this.nextContinuation = null;
+		}
 	}
 	getRequestBodyExample()
 	{
@@ -131,50 +145,6 @@ class chatReplayProcesser
 	{
 		requestNewChatReplay(this);
 	}
-	setNextContinuationByData(data)
-	{
-		let responseObj = JSON.parse(data);
-		let continuation = responseObj?.continuationContents?.liveChatContinuation?.continuations[0]?.liveChatReplayContinuationData?.continuation;
-
-		if (continuation)
-		{
-			this.nextContinuation = continuation;
-		}
-		else
-		{
-			this.nextContinuation = null;
-		}
-	}
-	async setExampleByDetails(details)
-	{
-		await this.setRequestBodyExample(JSON.parse(this.decoder.decode((details.requestBody.raw[0]).bytes)));
-	}
-	async setExampleHeadersByDetails(details)
-	{
-		const headers = details?.requestHeaders;
-		if (! headers)
-		{
-			return;
-		}
-		headers.forEach((element) => {
-			if (element.name === "X-Goog-Visitor-Id")
-			{
-				this.requestHeadersExample["X-Goog-Visitor-Id"] = element.value;
-			}
-			else if (element.name === "X-Youtube-Bootstrap-Logged-In")
-			{
-				this.requestHeadersExample["X-Youtube-Bootstrap-Logged-In"] = element.value;
-			}
-			else if (element.name === "X-Youtube-Client-Name")
-			{
-				this.requestHeadersExample["X-Youtube-Client-Name"] = element.value;
-			}
-			else if (element.name === "X-Youtube-Client-Version")
-			{
-				this.requestHeadersExample["X-Youtube-Client-Version"] = element.value;
-			}
-		});
-	}
 	/* end test */
 }
 
@@ -214,17 +184,7 @@ function requestNewChatReplay(that)
 	// check include continuation
 	// check the last comment time (trought data into commentsTime)
 }
-/* test */
-function getContinuation(data)
-{
-	const regex = /(?<=,"continuation":").*?(?=")/g
-	let match = [];
-	match = data.match(regex);
-	return match[0] || null;
-}
-/* test end */
-
-/* I have no idea why it herer
+/* I have no idea why it here
 element.replayChatitemAction.actions.addChatitemAction.item.liveChatTextMessageRenderer.timestampText.simpleText
 time2Seconds(element.replayChatitemAction.actions[0].addChatitemAction.item.liveChatTextMessageRenderer.timestampText.simpleText);
 			if (! element.replayChatItemAction?.actions[0].addChatItemAction?.item?.liveChatTextMessageRenderer?.timestampText?.simpleText)
