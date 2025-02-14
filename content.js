@@ -27,7 +27,6 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	{
 		let requestBody = JSON.parse(message.requestBodyExample);
 		chatProcesser.setRequestBodyExample(requestBody);
-		testRequest();
 	}
 	else if (message.action == "setRequestHeadersExample")
 	{
@@ -36,7 +35,11 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	}
 	else if (message.action == "addComments")
 	{
-		chatProcesser.commentsCounter(JSON.parse(message.comments));
+		chatProcesser.commentsCounter(JSON.parse(message.commentsArray));
+	}
+	else if (message.action == "startRequest")
+	{
+		testRequest();
 	}
 })
 
@@ -55,14 +58,6 @@ function newChatReplayRequest(requestHeaders, requestBody)
 		"https://www.youtube.com/youtubei/v1/live_chat/get_live_chat_replay?prettyPrint=false",
 		{
 			method: "POST",
-			/*
-			headers: {
-				"X-Goog-Visitor-Id": "CgtOODVWekJVLVhlUSj937W9BjIKCgJUVxIEGgAgIg%3D%3D",
-				"X-Youtube-Bootstrap-Logged-In": "false",
-				"X-Youtube-Client-Name": "1",
-				"X-Youtube-Client-Version": "2.20250212.01.00"
-			},
-			*/
 			headers: requestHeaders,
 			body: requestBody
 		}

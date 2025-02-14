@@ -1,8 +1,6 @@
 let listenerAdded = false;
 let handlingTabId;
 
-let continuations = [];
-
 let decoder = new TextDecoder("utf-8");
 let encoder = new TextEncoder();
 
@@ -18,12 +16,6 @@ browser.runtime.onMessage.addListener((message, sender) =>
 		}
 		if (message.action === "stopAll")
 		{
-			try{
-			browser.webRequest.onBeforeRequest.removeListener(chatReplayListener);
-			browser.webRequest.onBeforeRequest.removeListener(additionalChatListener);
-			browser.webRequest.onBeforeSendHeaders.removeListener(additionalChatReplayHeaderListener);
-			}
-			catch (error) {console.log(error)};
 			chatProcesser.cleanup();
 		}
 	}
@@ -72,10 +64,10 @@ async function additionalChatListener(details)
 		data += chunk;
 		filter.write(event.data);
 	};
-	filter.onstop = async (event) =>
+	filter.onstop = (event) =>
 	{
 		filter.disconnect();
-		let comments = await chatProcesser.commentsTime(data);
+		let comments = chatProcesser.commentsTime(data);
 
 		browser.tabs.sendMessage(handlingTabId, {
 			action: "setContinuation",
@@ -89,6 +81,11 @@ async function additionalChatListener(details)
 			action: "addComments",
 			commentsArray: JSON.stringify(comments)
 		});
+		setTimeout(() => {
+			browser.tabs.sendMessage(handlingTabId, {
+				action: "startRequest",
+			});
+		}, 100);
 	};
 }
 
@@ -127,12 +124,10 @@ function chatReplayListener(details)
 	filter.onstop = (event) =>
 	{
 		filter.disconnect();
-		let commentsMsec = InitRequestCommentsTime(data);
 		browser.tabs.sendMessage(handlingTabId, {
 			action: "addComments",
-			comments: JSON.stringify(commentsMsec)
+			commentsArray: JSON.stringify(InitRequestCommentsTime(data))
 		})
-		//console.log(commentCount); // debug
 		browser.webRequest.onBeforeRequest.removeListener(chatReplayListener);
 	};
 }
@@ -192,11 +187,25 @@ function getNextContinuationByData(data)
 function InitRequestCommentsTime(data)
 {
 	const regex = /(?<="timestampText":{"simpleText":")\d{0,4}:*\d{0,8}:*\d{1,8}(?="})/g;
-	let matches = data.match(regex);
-	for (let i = 0; i < matches.length; ++i)
-	{
-		matches[i] *= 1000;
-	}
-
+	let matches = (data.match(regex)).map(value => time2Second(value) * 1000);
 	return matches;
+}
+
+function time2Second(str)
+{
+	let parts = str.split(":").map(Number);
+
+	if (parts.length === 1)
+	{
+		return parts[0];
+	}
+	else if (parts.length === 2)
+	{
+		return parts[0] * 60 + parts[1];
+	}
+	else if (parts.length === 3)
+	{
+		return parts[0] * 3600 + parts[1] * 60 + parts[2];
+	}
+	return NaN;
 }
