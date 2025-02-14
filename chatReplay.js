@@ -42,7 +42,7 @@ class chatReplayProcesser
 	{
 		return this.requestBodyExample;
 	}
-	getHeadersExample()
+	getRequestHeadersExample()
 	{
 		return this.requestHeadersExample;
 	}
@@ -50,35 +50,9 @@ class chatReplayProcesser
 	{
 		return this.nextContinuation;
 	}
-	async setExampleByDetails(details)
+	getPlayerOffset()
 	{
-		await this.setRequestBodyExample(JSON.parse(this.decoder.decode((details.requestBody.raw[0]).bytes)));
-	}
-	async setExampleHeadersByDetails(details)
-	{
-		const headers = details?.requestHeaders;
-		if (! headers)
-		{
-			return null;
-		}
-		headers.forEach((element) => {
-			if (element.name === "X-Goog-Visitor-Id")
-			{
-				this.requestHeadersExample["X-Goog-Visitor-Id"] = element.value;
-			}
-			else if (element.name === "X-Youtube-Bootstrap-Logged-In")
-			{
-				this.requestHeadersExample["X-Youtube-Bootstrap-Logged-In"] = element.value;
-			}
-			else if (element.name === "X-Youtube-Client-Name")
-			{
-				this.requestHeadersExample["X-Youtube-Client-Name"] = element.value;
-			}
-			else if (element.name === "X-Youtube-Client-Version")
-			{
-				this.requestHeadersExample["X-Youtube-Client-Version"] = element.value;
-			}
-		});
+		return this.playerOffset;
 	}
 	getCommentCount()
 	{
@@ -133,26 +107,6 @@ class chatReplayProcesser
 		--this.counterSubTimes;
 	}
 
-	setNextContinuationByData(data)
-	{
-		let responseObj = JSON.parse(data);
-		let continuation = responseObj?.continuationContents?.liveChatContinuation?.continuations[0]?.liveChatReplayContinuationData?.continuation;
-
-		if (continuation)
-		{
-			this.nextContinuation = continuation;
-		}
-		else
-		{
-			this.nextContinuation = null;
-		}
-	}
-
-	nextChatRequest(waitSec = 0)
-	{
-		// wait waitSec then next request;
-	}
-
 	addCounterNum(num)
 	{
 		let secGroup = this.commentCount[this.splitSec * this.counterSubTimes];
@@ -176,6 +130,50 @@ class chatReplayProcesser
 	testRequest()
 	{
 		requestNewChatReplay(this);
+	}
+	setNextContinuationByData(data)
+	{
+		let responseObj = JSON.parse(data);
+		let continuation = responseObj?.continuationContents?.liveChatContinuation?.continuations[0]?.liveChatReplayContinuationData?.continuation;
+
+		if (continuation)
+		{
+			this.nextContinuation = continuation;
+		}
+		else
+		{
+			this.nextContinuation = null;
+		}
+	}
+	async setExampleByDetails(details)
+	{
+		await this.setRequestBodyExample(JSON.parse(this.decoder.decode((details.requestBody.raw[0]).bytes)));
+	}
+	async setExampleHeadersByDetails(details)
+	{
+		const headers = details?.requestHeaders;
+		if (! headers)
+		{
+			return;
+		}
+		headers.forEach((element) => {
+			if (element.name === "X-Goog-Visitor-Id")
+			{
+				this.requestHeadersExample["X-Goog-Visitor-Id"] = element.value;
+			}
+			else if (element.name === "X-Youtube-Bootstrap-Logged-In")
+			{
+				this.requestHeadersExample["X-Youtube-Bootstrap-Logged-In"] = element.value;
+			}
+			else if (element.name === "X-Youtube-Client-Name")
+			{
+				this.requestHeadersExample["X-Youtube-Client-Name"] = element.value;
+			}
+			else if (element.name === "X-Youtube-Client-Version")
+			{
+				this.requestHeadersExample["X-Youtube-Client-Version"] = element.value;
+			}
+		});
 	}
 	/* end test */
 }
@@ -216,7 +214,7 @@ function requestNewChatReplay(that)
 	// check include continuation
 	// check the last comment time (trought data into commentsTime)
 }
-
+/* test */
 function getContinuation(data)
 {
 	const regex = /(?<=,"continuation":").*?(?=")/g
@@ -224,6 +222,7 @@ function getContinuation(data)
 	match = data.match(regex);
 	return match[0] || null;
 }
+/* test end */
 
 /* I have no idea why it herer
 element.replayChatitemAction.actions.addChatitemAction.item.liveChatTextMessageRenderer.timestampText.simpleText

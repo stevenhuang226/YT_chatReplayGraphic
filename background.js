@@ -79,24 +79,21 @@ async function additionalChatListener(details)
 	filter.onstop = async (event) =>
 	{
 		filter.disconnect();
-		console.log("start setting");
-		await chatProcesser.setExampleByDetails(details);
-		await chatProcesser.setNextContinuationByData(data);
 		let comments = await chatProcesser.commentsTime(data);
 
 		browser.tabs.sendMessage(handlingTabId, {
 			action: "setContinuation",
-			continuation: await chatProcesser.getNextContinuatoin()
+			continuation: getNextContinuationByData(data)
 		});
 		browser.tabs.sendMessage(handlingTabId, {
 			action: "setRequestBodyExample",
-			requestBodyExample: JSON.stringify(await chatProcesser.getRequestBodyExample())
+			requestBodyExample: JSON.stringify(getRequestBodyByDetails(details))
 		});
 		browser.tabs.sendMessage(handlingTabId, {
 			action: "addComments",
 			commentsArray: JSON.stringify(comments)
 		});
-		//browser.webRequest.onBeforeRequest.removeListener(additionalChatListener);
+		browser.webRequest.onBeforeRequest.removeListener(additionalChatListener);
 	};
 }
 
@@ -106,11 +103,9 @@ async function additionalChatReplayHeaderListener(details)
 	{
 		return;
 	}
-	chatProcesser.setExampleHeadersByDetails(details);
-	console.log(chatProcesser.getHeadersExample());
 	browser.tabs.sendMessage(handlingTabId, {
 		action: "setRequestHeadersExample",
-		requestHeadersExample: JSON.stringify(chatProcesser.getHeadersExample())
+		requestHeadersExample: JSON.stringify(getRequestHeadersByDetails(details))
 	});
 	browser.webRequest.onBeforeSendHeaders.removeListener(additionalChatReplayHeaderListener);
 }
@@ -143,116 +138,54 @@ function chatReplayListener(details)
 	};
 }
 
-/* test function */
-function compareContinuation(details)
+function getRequestBodyByDetails(details)
 {
 	let requestBody = JSON.parse(decoder.decode((details.requestBody.raw[0]).bytes));
-	let stat = "";
-	if (requestBody.continuation == continuations[continuations.length - 1])
+	delete requestBody.context.clickTracking;
+	return requestBody;
+}
+
+function getRequestHeadersByDetails(details)
+{
+	let headers = {};
+	let requestHeaders = details?.requestHeaders;
+	if (! headers)
 	{
-		stat = "same as last one";
+		return null;
+	}
+	requestHeaders.forEach(element => {
+		if (element.name === "X-Goog-Visitor-Id")
+		{
+			headers["X-Goog-Visitor-Id"] = element.value;
+		}
+		else if (element.name === "X-Youtube-Bootstrap-Logged-In")
+		{
+			headers["X-Youtube-Bootstrap-Logged-In"] = element.value;
+		}
+		else if (element.name === "X-Youtube-Client-Name")
+		{
+			headers["X-Youtube-Client-Name"] = element.value;
+		}
+		else if (element.name === "X-Youtube-Client-Version")
+		{
+			headers["X-Youtube-Client-Version"] = element.value;
+		}
+	});
+
+	return headers;
+}
+
+function getNextContinuationByData(data)
+{
+	let responseObj = JSON.parse(data);
+	let continuation = responseObj?.continuationContents?.liveChatContinuation?.continuations[0]?.liveChatReplayContinuationData?.continuation;
+
+	if (continuation)
+	{
+		return continuation;
 	}
 	else
 	{
-		stat = "not same as last one";
-	}
-	console.log(continuations[continuations.length - 1], requestBody.continuation, stat)
-}
-
-async function compare(details)
-{
-	let requestBody = JSON.parse(decoder.decode((details.requestBody.raw[0]).bytes));
-	if (compareArray.length === 0)
-	{
-		compareArray.push(requestBody);
-		return;
-	}
-	let lastRequestBody = compareArray[compareArray.length - 1];
-	await compareObject(requestBody, lastRequestBody);
-	compareArray.push(requestBody);
-}
-
-function setExample(details)
-{
-	let requestBody = JSON.parse(decoder.decode((details.requestBody.raw[0]).bytes));
-	chatProcesser.setRequestBodyExample(requestBody);
-}
-
-async function compareObject(obj1, obj2, path = "")
-{
-	if (Object.keys(obj1) < Object.keys(obj2))
-	{
-		[obj1, obj2] = [obj2, obj1];
-	}
-	for (let key in obj1)
-	{
-		let fullPath = `${path}.${key}` || key;
-		if (! (key in obj2))
-		{
-			console.log(`${fullPath} not found`);
-			continue;
-		}
-		if (typeof obj1[key] === "object" && typeof obj2[key] === "object")
-		{
-			await compareObject(obj1[key], obj2[key], `${fullPath}.${key}`);
-			continue;
-		}
-		if (obj1[key] !== obj2[key])
-		{
-			console.log(`${fullPath} different\n${obj1[key]}\n${obj2[key]}`);
-			continue;
-		}
+		return null;
 	}
 }
-
-async function dataProcesser(data)
-{
-	const splitSec = 30;
-	const regex = /(?<="timestampText":{"simpleText":")\d{0,4}:*\d{0,8}:*\d{1,8}(?="})/g
-	let match = "";
-
-	let subSec = splitSec;
-	let commentCount = [];
-	let comments = 0;
-
-	while((match = regex.exec(data)) !== null)
-	{
-		if ((time2Seconds(match[0]) - subSec) < 0)
-		{
-			comments += 1;
-		}
-		else
-		{
-			regex.lastIndex = match.index;
-			commentCount.push(comments);
-			subSec += splitSec;
-			comments = 0;
-		}
-	}
-	commentCount.push(comments);
-
-	console.log(commentCount);
-
-	console.log("first continuation: ", getContinuation(data));
-	continuations.push(getContinuation(data));
-}
-function time2Seconds(textTime)
-{
-	let parts = textTime.split(":").map(Number);
-
-	if (parts.length === 1)
-	{
-		return parts[0];
-	}
-	else if (parts.length === 2)
-	{
-		return parts[0] * 60 + parts[1];
-	}
-	else if (parts.length === 3)
-	{
-		return parts[0] * 3600 + parts[1] * 60 + parts[2];
-	}
-	return NaN;
-}
-
-/* end test function */

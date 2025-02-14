@@ -36,7 +36,6 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	}
 })
 
-
 /* test */
 function testRequest()
 {
