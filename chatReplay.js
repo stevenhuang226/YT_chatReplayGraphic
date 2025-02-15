@@ -2,6 +2,7 @@ class chatReplayProcesser
 {
 	playerOffsetSub = 5000;
 	splitSec = 30;
+	requestInterval = 1000;
 
 	isActive = false;
 	tabId = -1;
@@ -135,7 +136,7 @@ class chatReplayProcesser
 			this.commentCount[this.splitSec * this.counterSubTimes] = secGroup + num;
 		}
 	}
-	newChatReplayRequest()
+	async newChatReplayRequest()
 	{
 		let requestBody = structuredClone(this.requestBodyExample);
 		requestBody.continuation = this.nextContinuation;
@@ -149,39 +150,30 @@ class chatReplayProcesser
 				body: JSON.stringify(requestBody)
 			}
 		);
-		fetch(request).then(response => {
-			if (! response.ok)
-			{
-				console.error("new chat replay request failed");
-				this.isActive = false;
-			}
-			return response.json();
-		}).then(response => {
-			this.setNextContinuationByObject(response);
-			let comments = this.commentsTimeByObject(response);
-			this.commentsCounter(comments);
-		});
+		const response = await fetch(request);
+		if (! response.ok)
+		{
+			console.error("new chat replay request failed");
+			this.isActive = false;
+			return;
+		}
+		const responseObj = await response.json();
+		this.setNextContinuationByObject(responseObj);
+		this.commentsCounter(this.commentsTimeByObject(responseObj));
+		return;
 	}
 
-	loopRequest()
+	async loopRequest()
 	{
-		while (this.isActive === true && this.nextContinuation !== null)
+		await new Promise(resolve => {
+			setTimeout(resolve, this.requestInterval);
+		});
+		await this.newChatReplayRequest();
+		if (this.isActive === true && this.nextContinuation !== null)
 		{
+			this.loopRequest();
 		}
 	}
-
-	/* test */
-	testRequest()
-	{
-		console.log(this.getPlayerOffset());
-		this.newChatReplayRequest();
-		setTimeout(() => {
-			console.log(this.getNextContinuatoin());
-			console.log(this.getPlayerOffset());
-			console.log(this.getCommentCount());
-		}, 1000)
-	}
-	/* end test */
 
 	cleanup()
 	{

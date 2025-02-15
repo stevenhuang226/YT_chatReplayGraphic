@@ -47,9 +47,9 @@ browser.runtime.onMessage.addListener((message, sender) => {
 function testRequest()
 {
 	console.log("start test request");
-	chatProcesser.testRequest();
-
 	browser.runtime.sendMessage({action: "stopAll"});
+
+	chatProcesser.loopRequest();
 }
 
 function newChatReplayRequest(requestHeaders, requestBody)
