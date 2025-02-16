@@ -2,6 +2,7 @@ browser.runtime.sendMessage({"action": "startListenLiveChatReplay"});
 console.log("message sent");
 
 let chatProcesser;
+let drawer;
 
 window.addEventListener("beforeunload", () =>
 	{
@@ -13,6 +14,8 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	if (! chatProcesser)
 	{
 		chatProcesser = new chatReplayProcesser(-1);
+		drawer = new timeLineDrawer();
+		drawerTest();
 	}
 	console.log(message);
 	if (message.action == "chatReplayRequest")
@@ -39,34 +42,22 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	}
 	else if (message.action == "startRequest")
 	{
-		testRequest();
+	//	testRequest();
 	}
 })
 
 /* test */
+function drawerTest()
+{
+	drawer.selfTest();
+}
+
 function testRequest()
 {
 	console.log("start test request");
 	browser.runtime.sendMessage({action: "stopAll"});
 
 	chatProcesser.loopRequest();
-}
-
-function newChatReplayRequest(requestHeaders, requestBody)
-{
-	const request = new Request(
-		"https://www.youtube.com/youtubei/v1/live_chat/get_live_chat_replay?prettyPrint=false",
-		{
-			method: "POST",
-			headers: requestHeaders,
-			body: requestBody
-		}
-	)
-
-	fetch(request)
-		.then(response => {
-			console.log(response);
-		})
 }
 
 /* test end */
