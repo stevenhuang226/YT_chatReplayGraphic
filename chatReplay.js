@@ -2,7 +2,7 @@ class chatReplayProcesser
 {
 	playerOffsetSub = 5000;
 	splitSec = 30;
-	requestInterval = 1000;
+	requestInterval = 1200;
 
 	isActive = false;
 	tabId = -1;
@@ -168,12 +168,29 @@ class chatReplayProcesser
 		await new Promise(resolve => {
 			setTimeout(resolve, this.requestInterval);
 		});
+		console.log("new request"); // debug
 		await this.newChatReplayRequest();
 		if (this.isActive === true && this.nextContinuation !== null)
 		{
 			this.loopRequest();
 		}
+		/* test */
+		else
+		{
+			this.testDraw();
+			return;
+		}
+		/* test end */
 	}
+
+	/* test */
+	testDraw()
+	{
+		this.drawer = new timeLineDrawer(this.commentCount);
+		this.drawer.testDraw();
+		return;
+	}
+	/* test end */
 
 	cleanup()
 	{

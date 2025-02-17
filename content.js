@@ -14,8 +14,6 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	if (! chatProcesser)
 	{
 		chatProcesser = new chatReplayProcesser(-1);
-		drawer = new timeLineDrawer();
-		drawerTest();
 	}
 	console.log(message);
 	if (message.action == "chatReplayRequest")
@@ -42,22 +40,18 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	}
 	else if (message.action == "startRequest")
 	{
-	//	testRequest();
+		test();
 	}
 })
 
-/* test */
-function drawerTest()
-{
-	drawer.selfTest();
-}
-
-function testRequest()
+/* test  */
+function test()
 {
 	console.log("start test request");
 	browser.runtime.sendMessage({action: "stopAll"});
 
 	chatProcesser.loopRequest();
-}
 
+}
 /* test end */
+
