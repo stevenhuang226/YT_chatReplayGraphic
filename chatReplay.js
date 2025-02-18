@@ -2,22 +2,22 @@ class chatReplayProcesser
 {
 	playerOffsetSub = 5000;
 	splitSec = 30;
-	requestInterval = 1200;
+	requestInterval = 800;
 
 	isActive = false;
 	tabId = -1;
-	nextContinuation = "";
-	playerOffset = 0;
+
 	requestBodyExample;
 	requestHeadersExample = {};
+	nextContinuation = "";
+	playerOffset = 0;
+
 	commentCount = {};
-
-	drawer;
-	drawed = false;
-
 	counterSubTimes = 1;
 
 	decoder = new TextDecoder("utf-8");
+
+	loopRequestCallBack;
 
 	constructor(tabId)
 	{
@@ -43,14 +43,6 @@ class chatReplayProcesser
 	getCommentCount()
 	{
 		return this.commentCount;
-	}
-	getDrawedStat()
-	{
-		return this.drawed;
-	}
-	setDrawer(drawer)
-	{
-		this.drawer = drawer;
 	}
 	setContinuation(str)
 	{
@@ -86,6 +78,10 @@ class chatReplayProcesser
 		{
 			this.nextContinuation = null;
 		}
+	}
+	setLoopRequestCallBack(callback)
+	{
+		this.loopRequestCallBack = callback;
 	}
 	commentsTime(data)
 	{
@@ -185,24 +181,11 @@ class chatReplayProcesser
 		{
 			this.loopRequest();
 		}
-		/* test */
 		else
 		{
-			this.testDraw();
-			return;
+			this.loopRequestCallBack();
 		}
-		/* test end */
 	}
-
-	/* test */
-	testDraw()
-	{
-		this.drawer.setCommentCount(this.commentCount);
-		this.drawer.drawGraphic();
-		this.drawed = true;
-		return;
-	}
-	/* test end */
 
 	cleanup()
 	{

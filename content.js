@@ -2,6 +2,7 @@ browser.runtime.sendMessage({"action": "startListenLiveChatReplay"});
 console.log("message sent");
 
 let chatProcesser;
+let drawed = false;
 let drawer;
 
 window.addEventListener("beforeunload", () =>
@@ -14,6 +15,10 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	if (! chatProcesser)
 	{
 		chatProcesser = new chatReplayProcesser(-1);
+	}
+	if (! drawer)
+	{
+		drawer = new timeLineDrawer();
 	}
 	console.log(message);
 	if (message.action == "chatReplayRequest")
@@ -45,23 +50,21 @@ browser.runtime.onMessage.addListener((message, sender) => {
 })
 
 window.addEventListener("resize", () => {
-	if (chatProcesser.getDrawedStat())
+	if (drawed)
 	{
 		drawer.update();
 	}
-})
+});
 
-
-/* test  */
-function test()
+function startRequest()
 {
-	console.log("start test request");
 	browser.runtime.sendMessage({action: "stopAll"});
-	drawer = new timeLineDrawer();
-	chatProcesser.setDrawer(drawer);
-
+	chatProcesser.setLoopRequestCallBack(finishDraw);
 	chatProcesser.loopRequest();
-
 }
-/* test end */
-
+function finishDraw()
+{
+	drawed = true;
+	drawer.setCommentCount(chatProcesser.getCommentCount());
+	drawer.drawGraphic();
+}

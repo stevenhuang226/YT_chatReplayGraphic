@@ -24,66 +24,9 @@ class timeLineDrawer
 
 	update()
 	{
-		this.progressBarLength = this.progressBar.length;
+		this.progressBarLength = this.progressBar.clientWidth;
 		this.drawGraphic();
 	}
-
-	/* test */
-	async selfTest()
-	{
-		console.log(this.progressBar);
-		console.log(typeof this.progressBar);
-
-		if (this.progressBar instanceof HTMLElement)
-		{
-			console.log("valid DOM");
-		}
-		else
-		{
-			console.log("not valid DOM");
-		}
-
-		let num1 = document.createElement("div");
-		num1.style.width = "100px";
-		num1.style.height = "10px";
-		num1.style.backgroundColor = "blue";
-		this.progressBar.appendChild(num1);
-
-		console.log(num1);
-	}
-
-	async testDraw()
-	{
-		this.splitPx();
-		let commentsArray = Object.values(this.commentCount);
-		let index = 0;
-		for (let commentsNum of commentsArray)
-		{
-			await this.testBar(this.splitGroup[index], commentsNum * this.commentToPixel);
-			++index;
-		}
-	}
-
-	async testBar(width, height)
-	{
-		console.log(width, "x", height);
-		let div = document.createElement("div");
-		div.style.width = String(width) + "px";
-		div.style.height = String(height) + "px";
-		div.style.backgroundColor = "blue";
-		div.style.float = "left";
-		this.progressBar.appendChild(div);
-		this.divArray.push(div);
-		return;
-	}
-	async removeDiv()
-	{
-		this.dirArray.forEach(element => {
-			element.remove();
-		});
-		return;
-	}
-	/* test end*/
 
 	splitPx()
 	{
@@ -123,15 +66,19 @@ class timeLineDrawer
 	{
 		let element = document.createElement("DIV");
 		element.style.width = String(width) + "px";
-		element.style.height = String(height) + "px";
+		element.style.height = (height > 0) ? String(height) + "px" : "1px";
 		element.style.backgroundColor = this.bgColor;
 		element.style.float = "left";
+		if (height === 0)
+		{
+			element.style.visibility = "hidden";
+		}
 		this.barContainer.appendChild(element);
 		this.divArray.push(element);
 	}
 	cleanGraphic()
 	{
-		this.dirArray.forEach(element => {
+		this.divArray.forEach(element => {
 			element.remove();
 		});
 	}
