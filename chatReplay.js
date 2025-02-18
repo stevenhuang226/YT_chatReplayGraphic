@@ -12,6 +12,9 @@ class chatReplayProcesser
 	requestHeadersExample = {};
 	commentCount = {};
 
+	drawer;
+	drawed = false;
+
 	counterSubTimes = 1;
 
 	decoder = new TextDecoder("utf-8");
@@ -40,6 +43,14 @@ class chatReplayProcesser
 	getCommentCount()
 	{
 		return this.commentCount;
+	}
+	getDrawedStat()
+	{
+		return this.drawed;
+	}
+	setDrawer(drawer)
+	{
+		this.drawer = drawer;
 	}
 	setContinuation(str)
 	{
@@ -186,8 +197,9 @@ class chatReplayProcesser
 	/* test */
 	testDraw()
 	{
-		this.drawer = new timeLineDrawer(this.commentCount);
-		this.drawer.testDraw();
+		this.drawer.setCommentCount(this.commentCount);
+		this.drawer.drawGraphic();
+		this.drawed = true;
 		return;
 	}
 	/* test end */

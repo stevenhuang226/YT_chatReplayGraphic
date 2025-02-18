@@ -1,6 +1,7 @@
 class timeLineDrawer
 {
 	progressBar;
+	barContainer;
 	progressBarLength;
 
 	splitGroup = [];
@@ -8,18 +9,23 @@ class timeLineDrawer
 	divArray = [];
 
 	commentToPixel = 1;
+	bgColor = "blue";
 
-	constructor(comments)
+	constructor()
 	{
 		this.progressBar = document.getElementsByClassName("ytp-progress-bar-container")[0];
+		this.barContainer = this.progressBar;
 		this.progressBarLength = this.progressBar.clientWidth;
+	}
+	setCommentCount(comments)
+	{
 		this.commentCount = structuredClone(comments);
 	}
 
 	update()
 	{
 		this.progressBarLength = this.progressBar.length;
-		this.splitPx();
+		this.drawGraphic();
 	}
 
 	/* test */
@@ -99,8 +105,35 @@ class timeLineDrawer
 			}
 			addLength += addUnit;
 		}
-		console.log(numsGroup); //debug
 		this.splitGroup = structuredClone(numsGroup);
+	}
+	drawGraphic()
+	{
+		this.cleanGraphic();
+		this.splitPx();
+		let commentsArray = Object.values(this.commentCount);
+		let index = 0;
+		for (let commentNum of commentsArray)
+		{
+			this.drawBar(this.splitGroup[index], commentNum * this.commentToPixel);
+			++index;
+		}
+	}
+	drawBar(width, height)
+	{
+		let element = document.createElement("DIV");
+		element.style.width = String(width) + "px";
+		element.style.height = String(height) + "px";
+		element.style.backgroundColor = this.bgColor;
+		element.style.float = "left";
+		this.barContainer.appendChild(element);
+		this.divArray.push(element);
+	}
+	cleanGraphic()
+	{
+		this.dirArray.forEach(element => {
+			element.remove();
+		});
 	}
 
 	cleanup()

@@ -44,11 +44,21 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	}
 })
 
+window.addEventListener("resize", () => {
+	if (chatProcesser.getDrawedStat())
+	{
+		drawer.update();
+	}
+})
+
+
 /* test  */
 function test()
 {
 	console.log("start test request");
 	browser.runtime.sendMessage({action: "stopAll"});
+	drawer = new timeLineDrawer();
+	chatProcesser.setDrawer(drawer);
 
 	chatProcesser.loopRequest();
 
