@@ -2,6 +2,8 @@ browser.runtime.sendMessage({"action": "startListenLiveChatReplay"});
 console.log("message sent");
 
 let chatProcesser;
+let drawed = false;
+let drawer;
 
 window.addEventListener("beforeunload", () =>
 	{
@@ -13,6 +15,10 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	if (! chatProcesser)
 	{
 		chatProcesser = new chatReplayProcesser(-1);
+	}
+	if (! drawer)
+	{
+		drawer = new timeLineDrawer();
 	}
 	console.log(message);
 	if (message.action == "chatReplayRequest")
@@ -39,34 +45,26 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	}
 	else if (message.action == "startRequest")
 	{
-		testRequest();
+		test();
 	}
 })
 
-/* test */
-function testRequest()
-{
-	console.log("start test request");
-	browser.runtime.sendMessage({action: "stopAll"});
+window.addEventListener("resize", () => {
+	if (drawed)
+	{
+		drawer.update();
+	}
+});
 
+function startRequest()
+{
+	browser.runtime.sendMessage({action: "stopAll"});
+	chatProcesser.setLoopRequestCallBack(finishDraw);
 	chatProcesser.loopRequest();
 }
-
-function newChatReplayRequest(requestHeaders, requestBody)
+function finishDraw()
 {
-	const request = new Request(
-		"https://www.youtube.com/youtubei/v1/live_chat/get_live_chat_replay?prettyPrint=false",
-		{
-			method: "POST",
-			headers: requestHeaders,
-			body: requestBody
-		}
-	)
-
-	fetch(request)
-		.then(response => {
-			console.log(response);
-		})
+	drawed = true;
+	drawer.setCommentCount(chatProcesser.getCommentCount());
+	drawer.drawGraphic();
 }
-
-/* test end */

@@ -2,19 +2,22 @@ class chatReplayProcesser
 {
 	playerOffsetSub = 5000;
 	splitSec = 30;
-	requestInterval = 1000;
+	requestInterval = 800;
 
 	isActive = false;
 	tabId = -1;
-	nextContinuation = "";
-	playerOffset = 0;
+
 	requestBodyExample;
 	requestHeadersExample = {};
-	commentCount = {};
+	nextContinuation = "";
+	playerOffset = 0;
 
+	commentCount = {};
 	counterSubTimes = 1;
 
 	decoder = new TextDecoder("utf-8");
+
+	loopRequestCallBack;
 
 	constructor(tabId)
 	{
@@ -75,6 +78,10 @@ class chatReplayProcesser
 		{
 			this.nextContinuation = null;
 		}
+	}
+	setLoopRequestCallBack(callback)
+	{
+		this.loopRequestCallBack = callback;
 	}
 	commentsTime(data)
 	{
@@ -168,10 +175,15 @@ class chatReplayProcesser
 		await new Promise(resolve => {
 			setTimeout(resolve, this.requestInterval);
 		});
+		console.log("new request"); // debug
 		await this.newChatReplayRequest();
 		if (this.isActive === true && this.nextContinuation !== null)
 		{
 			this.loopRequest();
+		}
+		else
+		{
+			this.loopRequestCallBack();
 		}
 	}
 

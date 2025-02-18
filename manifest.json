@@ -6,7 +6,7 @@
 	"content_scripts": [
 		{
 			"matches": ["https://www.youtube.com/watch*"],
-			"js": ["content.js", "chatReplay.js"]
+			"js": ["content.js", "chatReplay.js", "timeLineDrawer.js"]
 		}
 	],
 	"background": {
