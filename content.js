@@ -1,6 +1,8 @@
 browser.runtime.sendMessage({"action": "startListenLiveChatReplay"});
 console.log("message sent");
 
+let initCommentsAdded = false;
+
 let chatProcesser;
 let drawed = false;
 let drawer;
@@ -20,7 +22,6 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	{
 		drawer = new timeLineDrawer();
 	}
-	console.log(message);
 	if (message.action == "chatReplayRequest")
 	{
 		newChatReplayRequest(message.requestHeaders, message.requestBody);
@@ -43,18 +44,36 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	{
 		chatProcesser.commentsCounter(JSON.parse(message.commentsArray));
 	}
+	else if (message.action == "initAddComments")
+	{
+		if (initCommentsAdded)
+		{
+			return;
+		}
+		initCommentsAdded = true;
+		chatProcesser.commentsCounter(JSON.parse(message.commentsArray));
+	}
 	else if (message.action == "startRequest")
 	{
-		test();
+		startRequest();
+		browser.runtime.sendMessage({"action": "stopAll"});
 	}
 })
 
-window.addEventListener("resize", () => {
-	if (drawed)
+window.addEventListener("resize", redrawGraphic);
+window.addEventListener("fullscreenchange", redrawGraphic);
+
+async function redrawGraphic()
+{
+	if (! drawed)
 	{
-		drawer.update();
+		return;
 	}
-});
+	await new Promise(resolve => {
+		setTimeout(resolve, 500);
+	});
+	drawer.update();
+}
 
 function startRequest()
 {
@@ -67,4 +86,5 @@ function finishDraw()
 	drawed = true;
 	drawer.setCommentCount(chatProcesser.getCommentCount());
 	drawer.drawGraphic();
+	chatProcesser.cleanup();
 }

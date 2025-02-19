@@ -9,12 +9,20 @@ class timeLineDrawer
 	divArray = [];
 
 	commentToPixel = 1;
-	bgColor = "blue";
+	bgColor = "rgba(0, 100, 255, 0.4)";
 
 	constructor()
 	{
 		this.progressBar = document.getElementsByClassName("ytp-progress-bar-container")[0];
-		this.barContainer = this.progressBar;
+		this.barContainer = document.createElement("div");
+		this.barContainer.style.display = "flex";
+		this.barContainer.style.alignItems = "flex-end";
+		this.barContainer.style.pointerEvents = "none";
+		this.barContainer.style.position = "relative";
+		this.barContainer.style.top = "-200px";
+		this.barContainer.style.maxHeight = "200px";
+		this.barContainer.style.height = "200px";
+		this.progressBar.appendChild(this.barContainer);
 		this.progressBarLength = this.progressBar.clientWidth;
 	}
 	setCommentCount(comments)
@@ -68,7 +76,7 @@ class timeLineDrawer
 		element.style.width = String(width) + "px";
 		element.style.height = (height > 0) ? String(height) + "px" : "1px";
 		element.style.backgroundColor = this.bgColor;
-		element.style.float = "left";
+
 		if (height === 0)
 		{
 			element.style.visibility = "hidden";
@@ -85,6 +93,8 @@ class timeLineDrawer
 
 	cleanup()
 	{
-		console.log("exit");
+		this.progressBar = null;
+		this.barContainer = null;
+		this.divArray = null;
 	}
 };

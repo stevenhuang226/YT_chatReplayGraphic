@@ -2,7 +2,8 @@ class chatReplayProcesser
 {
 	playerOffsetSub = 5000;
 	splitSec = 30;
-	requestInterval = 800;
+	requestInterval = 100;
+	maximumRetry = 3;
 
 	isActive = false;
 	tabId = -1;
@@ -50,7 +51,14 @@ class chatReplayProcesser
 	}
 	setPlayerOffset(playerOffset)
 	{
-		this.playerOffset = String(playerOffset);
+		if (playerOffset > this.playerOffsetSub)
+		{
+			this.playerOffset = String(playerOffset - this.playerOffsetSub);
+		}
+		else
+		{
+			this.playerOffset = String(playerOffset);
+		}
 	}
 	setRequestBodyExample(obj)
 	{
@@ -129,7 +137,7 @@ class chatReplayProcesser
 		this.addCounterNum(comments);
 		--this.counterSubTimes;
 
-		this.setPlayerOffset(commentsMSec[commentsMSec.length - 1] - this.playerOffsetSub);
+		this.setPlayerOffset(commentsMSec[commentsMSec.length - 1]);
 	}
 	addCounterNum(num)
 	{
@@ -158,9 +166,18 @@ class chatReplayProcesser
 			}
 		);
 		const response = await fetch(request);
-		if (! response.ok)
+		if (! response.ok && this.maximumRetry >= 0)
 		{
+			--this.maximumRetry;
 			console.error("new chat replay request failed");
+			console.log("req: ",request);
+			console.log("reqBody: ", requestBody);
+			console.log("res: ",response);
+			this.newChatReplayRequest();
+		}
+		else if (! response.ok && this.maximumRetry < 0)
+		{
+			console.error("maximum chat replay failed");
 			this.isActive = false;
 			return;
 		}
@@ -183,7 +200,10 @@ class chatReplayProcesser
 		}
 		else
 		{
-			this.loopRequestCallBack();
+			if (this.loopRequestCallBack !== null)
+			{
+				this.loopRequestCallBack();
+			}
 		}
 	}
 
@@ -191,5 +211,6 @@ class chatReplayProcesser
 	{
 		this.isActive = false;
 		this.tabId = -1;
+		this.loopRequestCallBack = null;
 	}
 }

@@ -6,16 +6,20 @@ let encoder = new TextEncoder();
 
 let chatProcesser;
 
+let stopAll = true;
+
 browser.runtime.onMessage.addListener((message, sender) =>
 	{
-		console.log(message); // debug
 		if (message.action === "startListenLiveChatReplay")
 		{
+			stopAll = false;
 			chatProcesser = new chatReplayProcesser(sender.tab.id);
 			addChatReplayListener(sender.tab.id);
 		}
 		if (message.action === "stopAll")
 		{
+			handlingTabId = -1;
+			stopAll = true;
 			chatProcesser.cleanup();
 		}
 	}
@@ -48,7 +52,7 @@ function addChatReplayListener(tabId)
 
 async function additionalChatListener(details)
 {
-	if (details.tabId !== handlingTabId || details.method !== "POST")
+	if (details.tabId !== handlingTabId || details.method !== "POST" || stopAll === true)
 	{
 		return;
 	}
@@ -86,12 +90,13 @@ async function additionalChatListener(details)
 				action: "startRequest",
 			});
 		}, 100);
+
 	};
 }
 
 async function additionalChatReplayHeaderListener(details)
 {
-	if (details.tabId !== handlingTabId || details.method !== "POST")
+	if (details.tabId !== handlingTabId || details.method !== "POST" || stopAll === true)
 	{
 		return;
 	}
@@ -99,17 +104,14 @@ async function additionalChatReplayHeaderListener(details)
 		action: "setRequestHeadersExample",
 		requestHeadersExample: JSON.stringify(getRequestHeadersByDetails(details))
 	});
-	browser.webRequest.onBeforeSendHeaders.removeListener(additionalChatReplayHeaderListener);
 }
 
 function chatReplayListener(details)
 {
-	/*
-	if (details.tabId !== handlingTabId)
+	if (stopAll === true)
 	{
 		return;
 	}
-	*/
 	let filter = browser.webRequest.filterResponseData(details.requestId);
 
 	let chunk = "";
@@ -125,10 +127,9 @@ function chatReplayListener(details)
 	{
 		filter.disconnect();
 		browser.tabs.sendMessage(handlingTabId, {
-			action: "addComments",
+			action: "initAddComments",
 			commentsArray: JSON.stringify(InitRequestCommentsTime(data))
-		})
-		browser.webRequest.onBeforeRequest.removeListener(chatReplayListener);
+		});
 	};
 }
 
