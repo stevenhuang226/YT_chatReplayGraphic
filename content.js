@@ -1,5 +1,4 @@
 browser.runtime.sendMessage({"action": "startListenLiveChatReplay"});
-console.log("message sent");
 
 let initCommentsAdded = false;
 

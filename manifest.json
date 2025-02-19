@@ -17,8 +17,7 @@
 		"webRequest",
 		"webRequestBlocking",
 		"webRequestFilterResponse",
-		"tabs",
-		"<all_urls>",
-		"contextMenus"
+		"activeTab",
+		"https://www.youtube.com/"
 	]
 }
