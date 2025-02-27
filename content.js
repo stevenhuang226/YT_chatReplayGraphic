@@ -20,6 +20,7 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	if (! drawer)
 	{
 		drawer = new timeLineDrawer();
+		getVideoTime();
 	}
 	if (message.action == "chatReplayRequest")
 	{
@@ -86,4 +87,18 @@ function finishDraw()
 	drawer.setCommentCount(chatProcesser.getCommentCount());
 	drawer.drawGraphic();
 	chatProcesser.cleanup();
+}
+function getVideoTime()
+{
+	let videoTimeText = document.getElementsByClassName("ytp-time-duration")[0];
+	console.log("video time:", videoTimeText.innerHTML);
+	console.log("video s:", time2Second(videoTimeText.innerHTML));
+}
+function cleanGraphic()
+{
+	if (! drawer)
+	{
+		return;
+	}
+	drawer.cleanGraphic();
 }
