@@ -10,7 +10,7 @@
 		}
 	],
 	"background": {
-		"scripts": ["background.js", "chatReplay.js", "tool.js", "bgTool.js"],
+		"scripts": ["bgListener.js", "background.js", "chatReplay.js", "tool.js", "bgTool.js"],
 		"persistent": true
 	},
 	"permissions": [

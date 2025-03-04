@@ -1,14 +1,19 @@
 let listenerAdded = false;
 let handlingTabId;
 
-let tabId2videoLen = {};
-
 let decoder = new TextDecoder("utf-8");
 let encoder = new TextEncoder();
+let YTbgListener = new YThtmlBgListener();
 
 let chatProcesser;
 
 let stopAll = true;
+
+browser.webRequest.onBeforeRequest.addListener(
+	YThtmlListener,
+	{"urls": ["https://www.youtube.com/watch?v=*"]},
+	["blocking"]
+)
 
 browser.runtime.onMessage.addListener((message, sender) =>
 	{
@@ -17,6 +22,7 @@ browser.runtime.onMessage.addListener((message, sender) =>
 			stopAll = false;
 			chatProcesser = new chatReplayProcesser(sender.tab.id);
 			addChatReplayListener(sender.tab.id);
+			YTbgListener.sendToTab(sender.tab.id);
 		}
 		if (message.action === "stopAll")
 		{
@@ -27,6 +33,7 @@ browser.runtime.onMessage.addListener((message, sender) =>
 		}
 	}
 );
+
 
 function addChatReplayListener(tabId)
 {
@@ -134,30 +141,7 @@ function chatReplayListener(details)
 	};
 }
 
-function AllTimeListener(details)
+function YThtmlListener(details)
 {
-	let filter = browser.webRequest.filterResponseData(details.requestId);
-
-	let data = "";
-
-	filter.ondata = (event) =>
-	{
-		data += decoder.decode(event.data, {stream: true});
-		filter.write(event.data);
-	};
-	filter.onstop = (event) =>
-	{
-		filter.disconnect();
-		matchVideoLength(data, details.tabId);
-	}
-}
-
-function matchVideoLength(data, tabId)
-{
-	const regex = /(?<=","lengthSeconds":")\d+(?=","channelId)/;
-	let videoLength = data.match(regex)[0];
-
-	console.log(videoLength); //debug
-
-	tabId2videoLen[tabId] = parseInt(videoLength);
+	YTbgListener.listener(details);
 }

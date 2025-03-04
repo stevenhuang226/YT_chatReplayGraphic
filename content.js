@@ -58,6 +58,10 @@ browser.runtime.onMessage.addListener((message, sender) => {
 		startRequest();
 		browser.runtime.sendMessage({"action": "stopAll"});
 	}
+	else if (message.action == "setVideoLength")
+	{
+		chatProcesser.setVideoLength(message.videoLength);
+	}
 })
 
 window.addEventListener("resize", redrawGraphic);
