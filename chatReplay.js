@@ -159,17 +159,22 @@ class chatReplayProcesser
 
 	async fillBlankGroup()
 	{
+		console.log("video len: ", this.videoLength);
 		const lastGroup = this.videoLength - this.videoLength%this.splitSec;
+		console.log(lastGroup); //debug
 
 		if (this.commentCount[lastGroup]) 
 		{
+			console.log("no alloc"); //debug
 			return;
 		}
 		let groupKeys = Object.keys(this.commentCount);
-		for (i = parseInt(groupKeys[groupKyes.length - 1]) + this.splitSec, i <= lastGroup, i += this.splitSec)
+		for (let i = parseInt(groupKeys[groupKeys.length - 1]) + this.splitSec; i <= lastGroup; i += this.splitSec)
 		{
-			await this.commentCount[i] = 0;
+			this.commentCount[i] = 0;
 		}
+
+		console.log("ret");
 		return;
 	}
 

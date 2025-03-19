@@ -31,23 +31,29 @@ class YThtmlBgListener
 	{
 		let videoLength = data.match(this.regex)[0];
 
-		console.log("video len: ", videoLength); //debug
-
 		if (videoLength <= 0)
 		{
 			return;
 		}
 		this.tabId2VideoLen[this.buffTabId] = parseInt(videoLength);
-		console.log(this.tabId2VideoLen); //debug
 	}
 
 	getVideoLen(tabId)
 	{
-		if (! this.tabId2VideoLen)
+		if (! this.tabId2VideoLen[tabId])
 		{
 			return;
 		}
 		return this.tabId2VideoLen[tabId];
+	}
+
+	resetVideoLen(tabId)
+	{
+		if (! this.tabId2VideoLen[tabId])
+		{
+			return;
+		}
+		this.tabId2VideoLen[tabId] = -1;
 	}
 
 	sendToTab(tabId)
@@ -58,7 +64,7 @@ class YThtmlBgListener
 		}
 		browser.tabs.sendMessage(tabId, {
 			action: "setVideoLength",
-			videoLength: this.tabId2VideoLen[tabId];
+			videoLength: this.tabId2VideoLen[tabId]
 		});
 	}
 }

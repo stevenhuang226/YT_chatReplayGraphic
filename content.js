@@ -9,8 +9,17 @@ let drawer;
 window.addEventListener("beforeunload", () =>
 	{
 		browser.runtime.sendMessage({"action": "stopAll"});
+		resetTab();
 	}
 )
+document.addEventListener("yt-navigate-start", () => {
+	resetTab();
+	browser.runtime.sendMessage({"action": "stopAll"});
+})
+document.addEventListener("yt-navigate-finish", () => {
+	browser.runtime.sendMessage({"action": "startListenLiveChatReplay"});
+	browser.runtime.sendMessage({"action": "requestVideoLen"});
+})
 
 browser.runtime.onMessage.addListener((message, sender) => {
 	if (! chatProcesser)
@@ -20,7 +29,6 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	if (! drawer)
 	{
 		drawer = new timeLineDrawer();
-		getVideoTime();
 	}
 	if (message.action == "chatReplayRequest")
 	{
@@ -61,6 +69,7 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	else if (message.action == "setVideoLength")
 	{
 		chatProcesser.setVideoLength(message.videoLength);
+		console.log(message.videoLength); //debug
 	}
 })
 
@@ -92,12 +101,6 @@ function finishDraw()
 	drawer.drawGraphic();
 	chatProcesser.cleanup();
 }
-function getVideoTime()
-{
-	let videoTimeText = document.getElementsByClassName("ytp-time-duration")[0];
-	console.log("video time:", videoTimeText.innerHTML);
-	console.log("video s:", time2Second(videoTimeText.innerHTML));
-}
 function cleanGraphic()
 {
 	if (! drawer)
@@ -105,4 +108,13 @@ function cleanGraphic()
 		return;
 	}
 	drawer.cleanGraphic();
+}
+function resetTab()
+{
+	cleanGraphic();
+	initCommentsAdded = false;
+	drawed = false;
+
+	drawer = null;
+	chatProcesser = null;
 }

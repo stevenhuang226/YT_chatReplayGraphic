@@ -17,11 +17,15 @@ browser.webRequest.onBeforeRequest.addListener(
 
 browser.runtime.onMessage.addListener((message, sender) =>
 	{
+		console.log(message); //debug
 		if (message.action === "startListenLiveChatReplay")
 		{
 			stopAll = false;
 			chatProcesser = new chatReplayProcesser(sender.tab.id);
 			addChatReplayListener(sender.tab.id);
+		}
+		if (message.action === "requestVideoLen")
+		{
 			YTbgListener.sendToTab(sender.tab.id);
 		}
 		if (message.action === "stopAll")
@@ -29,7 +33,7 @@ browser.runtime.onMessage.addListener((message, sender) =>
 			handlingTabId = -1;
 			stopAll = true;
 			chatProcesser.cleanup();
-			tabId2videoLen[sender.tab.id] = -1;
+			//YTbgListener.resetVideoLen(sender.tab.id);
 		}
 	}
 );
