@@ -3,37 +3,24 @@ let handlingTabId;
 
 let decoder = new TextDecoder("utf-8");
 let encoder = new TextEncoder();
-let YTbgListener = new YThtmlBgListener();
 
 let chatProcesser;
 
 let stopAll = true;
 
-browser.webRequest.onBeforeRequest.addListener(
-	YThtmlListener,
-	{"urls": ["https://www.youtube.com/watch?v=*"]},
-	["blocking"]
-)
-
 browser.runtime.onMessage.addListener((message, sender) =>
 	{
-		console.log(message); //debug
 		if (message.action === "startListenLiveChatReplay")
 		{
 			stopAll = false;
 			chatProcesser = new chatReplayProcesser(sender.tab.id);
 			addChatReplayListener(sender.tab.id);
 		}
-		if (message.action === "requestVideoLen")
-		{
-			YTbgListener.sendToTab(sender.tab.id);
-		}
 		if (message.action === "stopAll")
 		{
 			handlingTabId = -1;
 			stopAll = true;
 			chatProcesser.cleanup();
-			//YTbgListener.resetVideoLen(sender.tab.id);
 		}
 	}
 );
@@ -143,9 +130,4 @@ function chatReplayListener(details)
 			commentsArray: JSON.stringify(InitRequestCommentsTime(data))
 		});
 	};
-}
-
-function YThtmlListener(details)
-{
-	YTbgListener.listener(details);
 }

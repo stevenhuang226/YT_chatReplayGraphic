@@ -8,8 +8,8 @@ let drawer;
 
 window.addEventListener("beforeunload", () =>
 	{
-		browser.runtime.sendMessage({"action": "stopAll"});
 		resetTab();
+		browser.runtime.sendMessage({"action": "stopAll"});
 	}
 )
 document.addEventListener("yt-navigate-start", () => {
@@ -18,17 +18,13 @@ document.addEventListener("yt-navigate-start", () => {
 })
 document.addEventListener("yt-navigate-finish", () => {
 	browser.runtime.sendMessage({"action": "startListenLiveChatReplay"});
-	browser.runtime.sendMessage({"action": "requestVideoLen"});
+	loacalVideoLength();
 })
 
 browser.runtime.onMessage.addListener((message, sender) => {
 	if (! chatProcesser)
 	{
 		chatProcesser = new chatReplayProcesser(-1);
-	}
-	if (! drawer)
-	{
-		drawer = new timeLineDrawer();
 	}
 	if (message.action == "chatReplayRequest")
 	{
@@ -66,11 +62,6 @@ browser.runtime.onMessage.addListener((message, sender) => {
 		startRequest();
 		browser.runtime.sendMessage({"action": "stopAll"});
 	}
-	else if (message.action == "setVideoLength")
-	{
-		chatProcesser.setVideoLength(message.videoLength);
-		console.log(message.videoLength); //debug
-	}
 })
 
 window.addEventListener("resize", redrawGraphic);
@@ -96,6 +87,12 @@ function startRequest()
 }
 function finishDraw()
 {
+	if (!!drawer)
+	{
+		drawer.cleanup();
+		drawer = null;
+	}
+	drawer = new timeLineDrawer();
 	drawed = true;
 	drawer.setCommentCount(chatProcesser.getCommentCount());
 	drawer.drawGraphic();
@@ -112,9 +109,38 @@ function cleanGraphic()
 function resetTab()
 {
 	cleanGraphic();
+
+	if (!!drawer)
+	{
+		drawer.cleanup();
+		drawer = null;
+	}
+	if (!!chatProcesser)
+	{
+		chatProcesser.cleanup();
+		chatProcesser = null;
+	}
+
 	initCommentsAdded = false;
 	drawed = false;
-
-	drawer = null;
-	chatProcesser = null;
 }
+
+const waitCheckAd = 3000;
+async function loacalVideoLength()
+{
+	if (!!document.querySelector('.ad-showing'))
+	{
+		setTimeout(() => {
+			loacalVideoLength()
+		}, waitCheckAd);
+		return;
+	}
+	let playerVideoLen = document.querySelector('video').duration;
+	if (! chatProcesser)
+	{
+		chatProcesser = new chatReplayProcesser(-1);
+	}
+	chatProcesser.setVideoLength(playerVideoLen);
+	return;
+}
+

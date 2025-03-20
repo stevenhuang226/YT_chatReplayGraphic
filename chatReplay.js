@@ -48,7 +48,7 @@ class chatReplayProcesser
 	}
 	setVideoLength(length)
 	{
-		this.videoLength = length;
+		this.videoLength = parseInt(length);
 	}
 	setContinuation(str)
 	{
@@ -159,13 +159,10 @@ class chatReplayProcesser
 
 	async fillBlankGroup()
 	{
-		console.log("video len: ", this.videoLength);
 		const lastGroup = this.videoLength - this.videoLength%this.splitSec;
-		console.log(lastGroup); //debug
 
 		if (this.commentCount[lastGroup]) 
 		{
-			console.log("no alloc"); //debug
 			return;
 		}
 		let groupKeys = Object.keys(this.commentCount);
@@ -174,7 +171,6 @@ class chatReplayProcesser
 			this.commentCount[i] = 0;
 		}
 
-		console.log("ret");
 		return;
 	}
 
