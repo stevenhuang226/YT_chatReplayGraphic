@@ -2,7 +2,7 @@ class chatReplayProcesser
 {
 	playerOffsetSub = 5000;
 	splitSec = 30;
-	requestInterval = 100;
+	requestInterval = 50;
 	maximumRetry = 3;
 
 	isActive = false;
@@ -12,6 +12,7 @@ class chatReplayProcesser
 	requestHeadersExample = {};
 	nextContinuation = "";
 	playerOffset = 0;
+	videoLength = 0;
 
 	commentCount = {};
 	counterSubTimes = 1;
@@ -44,6 +45,10 @@ class chatReplayProcesser
 	getCommentCount()
 	{
 		return this.commentCount;
+	}
+	setVideoLength(length)
+	{
+		this.videoLength = parseInt(length);
 	}
 	setContinuation(str)
 	{
@@ -151,6 +156,24 @@ class chatReplayProcesser
 			this.commentCount[this.splitSec * this.counterSubTimes] = secGroup + num;
 		}
 	}
+
+	async fillBlankGroup()
+	{
+		const lastGroup = this.videoLength - this.videoLength%this.splitSec;
+
+		if (this.commentCount[lastGroup]) 
+		{
+			return;
+		}
+		let groupKeys = Object.keys(this.commentCount);
+		for (let i = parseInt(groupKeys[groupKeys.length - 1]) + this.splitSec; i <= lastGroup; i += this.splitSec)
+		{
+			this.commentCount[i] = 0;
+		}
+
+		return;
+	}
+
 	async newChatReplayRequest()
 	{
 		let requestBody = structuredClone(this.requestBodyExample);
@@ -198,12 +221,10 @@ class chatReplayProcesser
 		{
 			this.loopRequest();
 		}
-		else
+		else if (this.loopRequestCallBack !== null)
 		{
-			if (this.loopRequestCallBack !== null)
-			{
-				this.loopRequestCallBack();
-			}
+			await this.fillBlankGroup();
+			this.loopRequestCallBack();
 		}
 	}
 

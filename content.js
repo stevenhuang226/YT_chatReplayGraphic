@@ -8,18 +8,23 @@ let drawer;
 
 window.addEventListener("beforeunload", () =>
 	{
+		resetTab();
 		browser.runtime.sendMessage({"action": "stopAll"});
 	}
 )
+document.addEventListener("yt-navigate-start", () => {
+	resetTab();
+	browser.runtime.sendMessage({"action": "stopAll"});
+})
+document.addEventListener("yt-navigate-finish", () => {
+	browser.runtime.sendMessage({"action": "startListenLiveChatReplay"});
+	loacalVideoLength();
+})
 
 browser.runtime.onMessage.addListener((message, sender) => {
 	if (! chatProcesser)
 	{
 		chatProcesser = new chatReplayProcesser(-1);
-	}
-	if (! drawer)
-	{
-		drawer = new timeLineDrawer();
 	}
 	if (message.action == "chatReplayRequest")
 	{
@@ -82,8 +87,60 @@ function startRequest()
 }
 function finishDraw()
 {
+	if (!!drawer)
+	{
+		drawer.cleanup();
+		drawer = null;
+	}
+	drawer = new timeLineDrawer();
 	drawed = true;
 	drawer.setCommentCount(chatProcesser.getCommentCount());
 	drawer.drawGraphic();
 	chatProcesser.cleanup();
 }
+function cleanGraphic()
+{
+	if (! drawer)
+	{
+		return;
+	}
+	drawer.cleanGraphic();
+}
+function resetTab()
+{
+	cleanGraphic();
+
+	if (!!drawer)
+	{
+		drawer.cleanup();
+		drawer = null;
+	}
+	if (!!chatProcesser)
+	{
+		chatProcesser.cleanup();
+		chatProcesser = null;
+	}
+
+	initCommentsAdded = false;
+	drawed = false;
+}
+
+const waitCheckAd = 3000;
+async function loacalVideoLength()
+{
+	if (!!document.querySelector('.ad-showing'))
+	{
+		setTimeout(() => {
+			loacalVideoLength()
+		}, waitCheckAd);
+		return;
+	}
+	let playerVideoLen = document.querySelector('video').duration;
+	if (! chatProcesser)
+	{
+		chatProcesser = new chatReplayProcesser(-1);
+	}
+	chatProcesser.setVideoLength(playerVideoLen);
+	return;
+}
+

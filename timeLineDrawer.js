@@ -93,7 +93,9 @@ class timeLineDrawer
 
 	cleanup()
 	{
+		cleanGraphic();
 		this.progressBar = null;
+		this.barContainer.remove();
 		this.barContainer = null;
 		this.divArray = null;
 	}

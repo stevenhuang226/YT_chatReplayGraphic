@@ -6,11 +6,11 @@
 	"content_scripts": [
 		{
 			"matches": ["https://www.youtube.com/watch*"],
-			"js": ["content.js", "chatReplay.js", "timeLineDrawer.js"]
+			"js": ["content.js", "chatReplay.js", "timeLineDrawer.js", "tool.js"]
 		}
 	],
 	"background": {
-		"scripts": ["background.js", "chatReplay.js"],
+		"scripts": ["background.js", "chatReplay.js", "tool.js", "bgTool.js"],
 		"persistent": true
 	},
 	"permissions": [
