@@ -126,10 +126,19 @@ function resetTab()
 }
 
 const waitCheckAd = 3000;
+const checkAdLimit = 100;
+let checkAdTimes = 0;
 async function loacalVideoLength()
 {
 	if (!!document.querySelector('.ad-showing'))
 	{
+		checkAdTimes += 1;
+		if (checkAdTimes >= waitCheckAd)
+		{
+			checkAdTimes = 0;
+			console.log("check Ads times out of limit, not video length set");
+			return;
+		}
 		setTimeout(() => {
 			loacalVideoLength()
 		}, waitCheckAd);
